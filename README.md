@@ -37,7 +37,7 @@ Original game: https://scratch.mit.edu/projects/27853178/
 - `style.css` - Styling and animations
 - `game.js` - Game logic and mechanics
 - `README.md` - This file
-- "trollface.png" - None of your business
+- `trollface.png` - None of your business
 
 ## Running the Game
 
