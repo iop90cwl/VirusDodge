@@ -35,6 +35,7 @@ A fun web browser game where you control a character and avoid green viruses tha
 - `style.css` - Styling and animations
 - `game.js` - Game logic and mechanics
 - `README.md` - This file
+- "trollface.png" - None of your business
 
 ## Running the Game
 
