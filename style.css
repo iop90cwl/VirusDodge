@@ -1,0 +1,186 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+#gameContainer {
+    position: relative;
+    width: 1200px;
+    height: 800px;
+    border: 3px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    background: #f0f8ff;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #e8f4f8 25%, #f0f8ff 25%, #f0f8ff 50%, #e8f4f8 50%, #e8f4f8 75%, #f0f8ff 75%, #f0f8ff 100%);
+    background-size: 40px 40px;
+}
+
+#startScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+}
+
+#startScreen h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+    color: #4CAF50;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#startScreen p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    color: #ddd;
+}
+
+#startScreen .controls {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#startScreen .controls p {
+    margin: 5px 0;
+    color: #ddd;
+    font-size: 1em;
+}
+
+#startScreen .controls p:first-child {
+    color: #4CAF50;
+    font-size: 1.1em;
+}
+
+#startScreen .spaceHint {
+    font-size: 0.9em;
+    margin-top: 10px;
+    margin-bottom: 0;
+    color: #aaa;
+    font-style: italic;
+}
+
+#startBtn, #tryAgainBtn {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+#startBtn:hover, #tryAgainBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(45deg, #45a049, #4CAF50);
+}
+
+#gameOverScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    z-index: 1000;
+}
+
+#gameOverText {
+    font-size: 4em;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.letter {
+    display: inline-block;
+    color: black;
+    transition: color 0.3s ease;
+    margin: 0 5px;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.letter.green {
+    color: #4CAF50;
+    text-shadow: 0 0 10px #4CAF50;
+}
+
+#scoreDisplay {
+    font-size: 1.5em;
+    margin-bottom: 30px;
+    color: #4CAF50;
+}
+
+#scoreDisplay .congratulations {
+    display: block;
+    font-size: 1.2em;
+    margin-top: 10px;
+    color: #FFD700;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+#trollface {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    transform: none;
+}
+
+#trollface a {
+    display: block;
+    cursor: pointer;
+}
+
+#trollface img {
+    width: 80px;
+    height: 80px;
+    transition: transform 0.2s ease;
+}
+
+#trollface a:hover img {
+    transform: scale(1.1);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Confetti animation will be handled by JavaScript */ 

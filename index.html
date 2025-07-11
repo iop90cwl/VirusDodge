@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virus Dodge</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="hidden">
+            <div id="gameOverText">
+                <span class="letter">G</span>
+                <span class="letter">A</span>
+                <span class="letter">M</span>
+                <span class="letter">E</span>
+                <span class="letter" style="margin-right: 20px;"></span>
+                <span class="letter">O</span>
+                <span class="letter">V</span>
+                <span class="letter">E</span>
+                <span class="letter">R</span>
+            </div>
+            <div id="scoreDisplay"></div>
+            <div id="trollface" class="hidden">
+                <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer">
+                    <img src="trollface.png" alt="Trollface" width="64" height="64">
+                </a>
+            </div>
+            <button id="tryAgainBtn">Try Again</button>
+        </div>
+        
+        <!-- Start Screen -->
+        <div id="startScreen">
+            <h1>Virus Dodge</h1>
+            <p>Avoid the green viruses as long as you can!</p>
+            <div class="controls">
+                <p><strong>Controls:</strong></p>
+                <p>WASD or Arrow Keys to move</p>
+            </div>
+            <button id="startBtn">Start Game</button>
+            <p class="spaceHint">Or Press Space</p>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html> 
