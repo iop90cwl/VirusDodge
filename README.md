@@ -1,6 +1,8 @@
-# Virus Dodge Game
+# Virus Dodge
 
-A fun web browser game where you control a character and avoid green viruses that spawn from the edges of the screen and move towards the center.
+This is an HTML/Javascript remake of a game I made in 2014 using scratch.mit.edu. Made using Cursor AI IDE as a fun project.
+
+Original game: https://scratch.mit.edu/projects/27853178/
 
 ## How to Play
 
