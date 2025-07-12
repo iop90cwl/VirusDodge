@@ -10,6 +10,18 @@ class VirusDodgeGame {
         this.scoreDisplay = document.getElementById('scoreDisplay');
         this.trollface = document.getElementById('trollface');
         
+        // Performance tracking
+        this.lastTime = 0;
+        this.deltaTime = 0;
+        
+        // Easter egg tracking
+        this.vaccineMode = false;
+        this.inputSequence = [];
+        this.requiredSequence = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
+        this.requiredSequenceWASD = ['w', 'w', 's', 's', 'a', 'd', 'a', 'd', 'b', 'a'];
+        this.lastInputTime = 0;
+        this.inputTimeout = 3000; // 3 seconds to complete sequence
+        
         this.setupCanvas();
         this.bindEvents();
         this.reset();
@@ -41,10 +53,18 @@ class VirusDodgeGame {
         this.letterAnimationDirection = 1;
         this.letterAnimationTimer = 0;
         
+        // Reset easter egg state
+        this.vaccineMode = false;
+        this.inputSequence = [];
+        this.lastInputTime = 0;
+        this.killedByKnifeGuy = false;
+        this.lastKnifeGuyTime = 0;
+        this.knifeGuySpawnRate = 0; // Will gradually increase from 30-60 seconds
+        
         // Difficulty progression
-        this.spawnRate = 0.01; // Start with low spawn rate
-        this.maxSpawnRate = 0.15; // Increased maximum spawn rate
-        this.difficultyIncreaseInterval = 10000; // Increase difficulty every 10 seconds
+        this.spawnRate = 0.018; // Increased starting spawn rate
+        this.maxSpawnRate = 0.35; // Increased maximum spawn rate for more challenge
+        this.difficultyIncreaseInterval = 10000; // Increase difficulty every 10 seconds (even faster)
         this.lastDifficultyIncrease = 0;
         
         // Initialize key states for smooth movement
@@ -109,6 +129,12 @@ class VirusDodgeGame {
             return;
         }
         
+        // Handle easter egg input sequence on start screen
+        if (this.gameState === 'start') {
+            this.handleEasterEggInput(key);
+            return;
+        }
+        
         // Handle movement keys only when playing
         if (this.gameState !== 'playing') return;
         
@@ -124,25 +150,85 @@ class VirusDodgeGame {
             this.keys[key] = false;
         }
     }
+    
+    handleEasterEggInput(key) {
+        const currentTime = Date.now();
+        
+        // Reset sequence if too much time has passed
+        if (currentTime - this.lastInputTime > this.inputTimeout) {
+            this.inputSequence = [];
+        }
+        
+        this.lastInputTime = currentTime;
+        this.inputSequence.push(key);
+        
+        // Keep only the last 10 inputs
+        if (this.inputSequence.length > 10) {
+            this.inputSequence = this.inputSequence.slice(-10);
+        }
+        
+        // Check if sequence matches either pattern
+        if (this.checkSequence(this.inputSequence, this.requiredSequence) || 
+            this.checkSequence(this.inputSequence, this.requiredSequenceWASD)) {
+            this.activateVaccineMode();
+        }
+    }
+    
+    checkSequence(input, required) {
+        if (input.length !== required.length) return false;
+        for (let i = 0; i < required.length; i++) {
+            if (input[i] !== required[i]) return false;
+        }
+        return true;
+    }
+    
+    activateVaccineMode() {
+        this.vaccineMode = true;
+        this.inputSequence = []; // Clear sequence
+        
+        // Show vaccine message
+        const vaccineMessage = document.createElement('div');
+        vaccineMessage.style.position = 'absolute';
+        vaccineMessage.style.bottom = '20px';
+        vaccineMessage.style.left = '50%';
+        vaccineMessage.style.transform = 'translateX(-50%)';
+        vaccineMessage.style.backgroundColor = '#4CAF50';
+        vaccineMessage.style.color = 'white';
+        vaccineMessage.style.padding = '20px';
+        vaccineMessage.style.borderRadius = '10px';
+        vaccineMessage.style.fontSize = '18px';
+        vaccineMessage.style.fontWeight = 'bold';
+        vaccineMessage.style.zIndex = '2000';
+        vaccineMessage.style.textAlign = 'center';
+        vaccineMessage.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)';
+        vaccineMessage.textContent = 'You have successfully developed the vaccine! The viruses won\'t stand a chance!';
+        
+        document.getElementById('gameContainer').appendChild(vaccineMessage);
+        
+        // Remove message after 3 seconds
+        setTimeout(() => {
+            vaccineMessage.remove();
+        }, 3000);
+    }
 
     updatePlayer() {
         if (this.gameState !== 'playing') return;
         
-        const speed = 3;
+        const speed = 300; // pixels per second
         let dx = 0;
         let dy = 0;
         
         // Check movement keys
-        if (this.keys.w || this.keys.arrowup) dy -= speed;
-        if (this.keys.s || this.keys.arrowdown) dy += speed;
-        if (this.keys.a || this.keys.arrowleft) dx -= speed;
-        if (this.keys.d || this.keys.arrowright) dx += speed;
+        if (this.keys.w || this.keys.arrowup) dy -= speed * this.deltaTime;
+        if (this.keys.s || this.keys.arrowdown) dy += speed * this.deltaTime;
+        if (this.keys.a || this.keys.arrowleft) dx -= speed * this.deltaTime;
+        if (this.keys.d || this.keys.arrowright) dx += speed * this.deltaTime;
         
         // Normalize diagonal movement to maintain consistent speed
         if (dx !== 0 && dy !== 0) {
             const magnitude = Math.sqrt(dx * dx + dy * dy);
-            dx = (dx / magnitude) * speed;
-            dy = (dy / magnitude) * speed;
+            dx = (dx / magnitude) * speed * this.deltaTime;
+            dy = (dy / magnitude) * speed * this.deltaTime;
         }
         
         // Apply movement
@@ -177,11 +263,34 @@ class VirusDodgeGame {
                 break;
         }
         
+        // Check if we should spawn a knife guy in vaccine mode
+        let isKnifeGuy = false;
+        if (this.vaccineMode && this.gameState === 'playing') {
+            const gameTime = (Date.now() - this.gameStartTime) / 1000;
+            if (gameTime >= 25) { // Start earlier at 25 seconds instead of 30
+                // Calculate knife guy spawn rate based on time
+                if (gameTime <= 55) { // Complete ramp-up by 55 seconds instead of 60
+                    // Gradual increase from 0% to 100% from 25-55 seconds (30 seconds total)
+                    const progress = (gameTime - 25) / 30; // 0 to 1 over 30 seconds
+                    this.knifeGuySpawnRate = progress; // 0 to 1 (0% to 100%)
+                } else {
+                    // After 55 seconds, stay at 100%
+                    this.knifeGuySpawnRate = 1;
+                }
+                
+                // Check if we should spawn a knife guy
+                if (Math.random() < this.knifeGuySpawnRate) {
+                    isKnifeGuy = true;
+                }
+            }
+        }
+        
         const virus = {
             x: x,
             y: y,
             radius: 28,
-            speed: 1.5 + Math.random() * 1
+            speed: 150 + Math.random() * 100, // pixels per second (faster)
+            isKnifeGuy: isKnifeGuy
         };
         
         this.viruses.push(virus);
@@ -197,8 +306,8 @@ class VirusDodgeGame {
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance > 0) {
-                virus.x += (dx / distance) * virus.speed;
-                virus.y += (dy / distance) * virus.speed;
+                virus.x += (dx / distance) * virus.speed * this.deltaTime;
+                virus.y += (dy / distance) * virus.speed * this.deltaTime;
             }
             
             // Start disintegration when virus gets close to center
@@ -224,26 +333,79 @@ class VirusDodgeGame {
         const currentTime = Date.now();
         const gameTime = currentTime - this.gameStartTime;
         
-        // Increase difficulty every 10 seconds with logarithmic progression
+        // Increase difficulty every 10 seconds with faster progression
         if (gameTime - this.lastDifficultyIncrease >= this.difficultyIncreaseInterval && this.spawnRate < this.maxSpawnRate) {
-            // Logarithmic increase: faster at the beginning, slower as it approaches max
+            // Faster increase for more challenge
             const progress = this.spawnRate / this.maxSpawnRate;
-            const increase = 0.02 * (1 - progress * 0.5); // Decrease increase rate as difficulty rises
+            const increase = 0.02 * (1 - progress * 0.4); // Even larger, faster increases
             this.spawnRate = Math.min(this.maxSpawnRate, this.spawnRate + increase);
             this.lastDifficultyIncrease = currentTime;
         }
     }
 
     checkCollisions() {
-        for (const virus of this.viruses) {
+        for (let i = this.viruses.length - 1; i >= 0; i--) {
+            const virus = this.viruses[i];
             const dx = this.player.x - virus.x;
             const dy = this.player.y - virus.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < this.player.radius + virus.radius) {
-                this.gameOver();
-                return;
+                if (this.vaccineMode && !virus.isKnifeGuy) {
+                    // In vaccine mode, viruses explode instead of killing player
+                    this.explodeVirus(virus);
+                    this.viruses.splice(i, 1);
+                } else {
+                    // Normal death or knife guy kills player
+                    if (this.vaccineMode && virus.isKnifeGuy) {
+                        this.killedByKnifeGuy = true;
+                    }
+                    this.gameOver();
+                    return;
+                }
             }
+        }
+    }
+    
+    explodeVirus(virus) {
+        // Create explosion effect
+        for (let i = 0; i < 8; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.position = 'absolute';
+            confetti.style.left = (virus.x - 2) + 'px';
+            confetti.style.top = (virus.y - 2) + 'px';
+            confetti.style.width = '4px';
+            confetti.style.height = '4px';
+            confetti.style.backgroundColor = '#4CAF50';
+            confetti.style.borderRadius = '50%';
+            confetti.style.zIndex = '1000';
+            
+            const angle = (Math.PI * 2 * i) / 8;
+            const speed = 3 + Math.random() * 2;
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed;
+            
+            let posX = virus.x;
+            let posY = virus.y;
+            
+            const animateExplosion = () => {
+                posX += vx;
+                posY += vy;
+                confetti.style.left = posX + 'px';
+                confetti.style.top = posY + 'px';
+                
+                const maxDistance = 100;
+                const distanceFromVirus = Math.sqrt((posX - virus.x) ** 2 + (posY - virus.y) ** 2);
+                
+                if (distanceFromVirus < maxDistance) {
+                    requestAnimationFrame(animateExplosion);
+                } else {
+                    confetti.remove();
+                }
+            };
+            
+            document.getElementById('gameContainer').appendChild(confetti);
+            requestAnimationFrame(animateExplosion);
         }
     }
 
@@ -277,7 +439,11 @@ class VirusDodgeGame {
             
             // Add congratulations message based on survival time
             let congratulations = '';
-            if (this.score >= 90) {
+            if (this.vaccineMode && this.killedByKnifeGuy) {
+                congratulations = 'Unfortunately, vaccines don\'t work against knives.';
+            } else if (this.score === 0) {
+                congratulations = 'Are you even trying?';
+            } else if (this.score >= 90) {
                 congratulations = 'You are the Virus Dodging Master!';
             } else if (this.score >= 60) {
                 congratulations = 'Unbelievable!';
@@ -463,13 +629,13 @@ class VirusDodgeGame {
         
         // Draw player as a simple black dot
         if (this.gameState === 'dying') {
-            // Pac-Man style wipe effect - start as complete circle, slowly disappear from top
+            // Pac-Man style wipe effect - start as complete circle, slowly disappear clockwise from top
             const elapsed = Date.now() - this.deathAnimationStart;
             const progress = elapsed / this.deathAnimationDuration;
             const remainingAngle = (1 - progress) * Math.PI * 2; // Remaining circle portion
             
             this.ctx.beginPath();
-            this.ctx.arc(this.player.x, this.player.y, this.player.radius, -Math.PI/2, -Math.PI/2 + remainingAngle);
+            this.ctx.arc(this.player.x, this.player.y, this.player.radius, -Math.PI/2, -Math.PI/2 - remainingAngle, true);
             this.ctx.lineTo(this.player.x, this.player.y);
             this.ctx.fillStyle = '#000000';
             this.ctx.fill();
@@ -500,27 +666,47 @@ class VirusDodgeGame {
             this.ctx.save();
             this.ctx.globalAlpha = alpha;
             
-            // Draw virus body
-            this.ctx.beginPath();
-            this.ctx.arc(virus.x, virus.y, virus.radius, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#4CAF50';
-            this.ctx.fill();
-            this.ctx.strokeStyle = '#388E3C';
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
-            
-            // Draw virus spikes
-            for (let i = 0; i < 8; i++) {
-                const angle = (i * Math.PI * 2) / 8;
-                const spikeX = virus.x + Math.cos(angle) * (virus.radius + 10);
-                const spikeY = virus.y + Math.sin(angle) * (virus.radius + 10);
+            if (virus.isKnifeGuy) {
+                // Draw knife guy as black dot with gray fill and knife emoji
                 
+                // Draw the dot (black outline with gray fill)
                 this.ctx.beginPath();
-                this.ctx.moveTo(virus.x + Math.cos(angle) * virus.radius, virus.y + Math.sin(angle) * virus.radius);
-                this.ctx.lineTo(spikeX, spikeY);
-                this.ctx.strokeStyle = '#4CAF50';
-                this.ctx.lineWidth = 4;
+                this.ctx.arc(virus.x, virus.y, virus.radius, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#808080'; // Gray fill
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#000000'; // Black outline
+                this.ctx.lineWidth = 2;
                 this.ctx.stroke();
+                
+                // Draw large knife emoji in the center
+                this.ctx.font = '24px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillText('🔪', virus.x, virus.y);
+            } else {
+                // Draw normal virus
+                this.ctx.beginPath();
+                this.ctx.arc(virus.x, virus.y, virus.radius, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#4CAF50';
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#388E3C';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                // Draw virus spikes
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i * Math.PI * 2) / 8;
+                    const spikeX = virus.x + Math.cos(angle) * (virus.radius + 10);
+                    const spikeY = virus.y + Math.sin(angle) * (virus.radius + 10);
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(virus.x + Math.cos(angle) * virus.radius, virus.y + Math.sin(angle) * virus.radius);
+                    this.ctx.lineTo(spikeX, spikeY);
+                    this.ctx.strokeStyle = '#4CAF50';
+                    this.ctx.lineWidth = 4;
+                    this.ctx.stroke();
+                }
             }
             
             // Restore context
@@ -537,6 +723,14 @@ class VirusDodgeGame {
 
     gameLoop() {
         if (this.gameState !== 'playing') return;
+        
+        // Calculate delta time
+        const currentTime = performance.now();
+        this.deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
+        this.lastTime = currentTime;
+        
+        // Cap delta time to prevent huge jumps on lag
+        if (this.deltaTime > 0.1) this.deltaTime = 0.1;
         
         // Spawn viruses based on current difficulty
         if (Math.random() < this.spawnRate) {
