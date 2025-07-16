@@ -19,9 +19,7 @@ Original game: https://scratch.mit.edu/projects/27853178/
 - **Real-time score** showing survival time in seconds
 - **Explosion effect** when the player touches a virus
 - **Animated "GAME OVER" text** with letters that turn green from left to right and back
-- **Trollface animation** that appears 10 seconds after game over and moves clockwise around the screen
 - **Try Again button** to restart the game
-- **Modern UI** with good contrast and visibility
 
 ## Game Mechanics
 
